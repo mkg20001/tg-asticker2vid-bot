@@ -3,7 +3,7 @@
 'use strict'
 
 const pino = require('pino')
-const log = pino({name: 'tg-asticker2vid-bot'})
+const log = pino({ name: 'tg-asticker2vid-bot' })
 
 const path = require('path')
 const mainURL = process.argv[3]
@@ -12,7 +12,7 @@ const hapi = require('@hapi/hapi')
 const boom = require('@hapi/boom')
 
 const emoji = require('emoji-dictionary')
-const prom = (f) => new Promise((resolve, reject) => f((err, res) => err ? reject(err) : resolve(res)))
+const prom = f => new Promise((resolve, reject) => f((err, res) => err ? reject(err) : resolve(res)))
 const renderLottie = require('puppeteer-lottie')
 const zlib = require('zlib')
 const fs = require('fs')
@@ -32,23 +32,27 @@ const core = require('teleutils')('asticker2vid-bot', {
 })
 
 async function postConvert (input, output, reply, opt) {
-  let {chat: {id: cid}, message_id: msgId, animation: {file_id: id, file_name: fName}} = await reply.video(output.path, opt)
-  if (fName.endsWith('_')) { fName = fName.replace(/_$/, '') }
+  let { chat: { id: cid }, message_id: msgId, animation: { file_id: id, file_name: fName } } = await reply.video(output.path, opt)
+
+  if (fName.endsWith('_')) {
+    fName = fName.replace(/_$/, '')
+  }
+
   fName = encodeURI(fName)
 
   await bot.sendMessage(cid, `Here's the link to download the video: ${mainURL}/${id}/${fName}?dl=1
 
-Donate to keep this bot up! https://paypal.me/mkg20001`, {webPreview: false, replyToMessage: msgId})
+Donate to keep this bot up! https://paypal.me/mkg20001`, { webPreview: false, replyToMessage: msgId })
 
   // clean disk
   input.cleanup()
   output.cleanup()
 }
 
-const beConfused = async (msg) => {
-  return msg.reply.file(path.join(__dirname, 'confused.webp'), {fileName: 'confused.webp', asReply: true})
+const beConfused = async msg => {
+  return msg.reply.file(path.join(__dirname, 'confused.webp'), { fileName: 'confused.webp', asReply: true })
 }
-const handleSticker = async (msg) => {
+const handleSticker = async msg => {
   const sticker = msg.sticker
 
   const location = await core.fetch.tg(sticker)
@@ -76,19 +80,19 @@ const handleSticker = async (msg) => {
     })
 
     await msg.track('convert/animated_sticker')
-    await postConvert(lottie, generated, msg.reply, {fileName: (msg.sticker.emoji ? emoji.getName(msg.sticker.emoji) + '_animated_sticker' : 'animated_sticker') + '.mp4', asReply: true})
+    await postConvert(lottie, generated, msg.reply, { fileName: (msg.sticker.emoji ? emoji.getName(msg.sticker.emoji) + '_animated_sticker' : 'animated_sticker') + '.mp4', asReply: true })
   } else {
-    await msg.reply.text('This sticker isn\'t animated. There\'s no point in converting it into a video.', {asReply: true})
+    await msg.reply.text('This sticker isn\'t animated. There\'s no point in converting it into a video.', { asReply: true })
   }
 }
 
-const {bot} = core
+const { bot } = core
 
 bot.on('sticker', handleSticker)
 bot.on('document', beConfused)
 bot.on('photo', beConfused)
 bot.on('text', () => {})
-bot.on('forward', (msg) => {
+bot.on('forward', msg => {
   switch (true) {
     case Boolean(msg.sticker):
       return handleSticker(msg)
@@ -110,13 +114,13 @@ const main = async () => {
 
   await server.register({
     plugin: require('hapi-pino'),
-    options: {name: 'tg-asticker2vid-bot'}
+    options: { name: 'tg-asticker2vid-bot' }
   })
 
   if (process.env.SENTRY_DSN) { // TODO: this seems to cause heap out of memory
     await server.register({
       plugin: require('hapi-sentry'),
-      options: {client: core.error}
+      options: { client: core.error }
     })
   }
 
@@ -140,21 +144,20 @@ const main = async () => {
         let file
         try {
           file = await bot.getFile(request.params.id)
-        } catch (e) {
-          if (e.error_code === 400) {
+        } catch (error) {
+          if (error.error_code === 400) {
             throw boom.notFound()
           } else {
-            throw e
+            throw error
           }
         }
         log.info(file, 'Downloading %s...', file.file_id)
         const loc = await core.fetch.web(file.fileLink, path.basename(file.file_path || ''))
 
         if (request.query.dl) {
-          return h.file(loc.path, {confine: false}).header('content-description', 'File Transfer').header('type', 'application/octet-stream').header('content-disposition', 'attachment; filename=' + JSON.stringify(request.params.real)).header('content-transfer-encoding', 'binary')
-        } else {
-          return h.file(loc.path, {confine: false}).type('video/mp4')
+          return h.file(loc.path, { confine: false }).header('content-description', 'File Transfer').header('type', 'application/octet-stream').header('content-disposition', 'attachment; filename=' + JSON.stringify(request.params.real)).header('content-transfer-encoding', 'binary')
         }
+        return h.file(loc.path, { confine: false }).type('video/mp4')
 
         // TODO: call loc.cleanup() afterwards
       }
