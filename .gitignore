@@ -1,4 +1,12 @@
-package-lock.json
+
+# custom
+
 node_modules
 *.bak
 teleutils:*
+
+# node
+
+yarn-error.log
+false
+yarn.lock
