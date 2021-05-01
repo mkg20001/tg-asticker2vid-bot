@@ -31,6 +31,11 @@ mkNode {
     makeWrapper
   ];
 
+  shellHook = ''
+    export PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=1
+    export PUPPETEER_EXECUTABLE_PATH=${chromium.outPath}/bin/chromium
+  '';
+
   prePatch = ''
     export PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=1
   '';

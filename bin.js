@@ -32,7 +32,7 @@ const core = require('teleutils')('asticker2vid-bot', {
 })
 
 async function postConvert (input, output, reply, opt) {
-  let { chat: { id: cid }, message_id: msgId, animation: { file_id: id, file_name: fName } } = await reply.video(output.path, opt)
+  let { chat: { id: cid }, message_id: msgId, video: { file_id: id, file_name: fName } } = await reply.video(output.path, opt)
 
   if (fName.endsWith('_')) {
     fName = fName.replace(/_$/, '')
